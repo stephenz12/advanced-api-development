@@ -23,12 +23,31 @@ class User(db.Model):
     email = db.Column(db.String(120), unique=True, nullable=False)
 
 
+order_product = db.Table(
+    'order_product',
+    db.Column('order_id', db.Integer, db.ForeignKey('order.id'), primary_key=True),
+    db.Column('product_id', db.Integer, db.ForeignKey('product.id'), primary_key=True)
+)
+
+
 class Order(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     order_date = db.Column(db.DateTime, default=datetime.utcnow)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
     user = db.relationship('User', backref=db.backref('orders', lazy=True))
+    products = db.relationship(
+        'Product',
+        secondary=order_product,
+        backref=db.backref('orders', lazy=True)
+    )
+
+
+class Product(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    product_name = db.Column(db.String(100), nullable=False)
+    price = db.Column(db.Float, nullable=False)
+
 
 # ----------------------
 # SCHEMAS
@@ -49,6 +68,13 @@ users_schema = UserSchema(many=True)
 
 order_schema = OrderSchema()
 orders_schema = OrderSchema(many=True)
+
+class ProductSchema(ma.SQLAlchemyAutoSchema):
+    class Meta:
+        model = Product
+
+product_schema = ProductSchema()
+products_schema = ProductSchema(many=True)
 
 # ----------------------
 # ROUTES
@@ -103,6 +129,31 @@ def create_order():
     db.session.commit()
 
     return order_schema.dump(order), 201
+
+
+@app.route("/orders/user/<int:user_id>", methods=["GET"])
+def get_orders_by_user(user_id):
+    orders = Order.query.filter_by(user_id=user_id).all()
+    return orders_schema.dump(orders)
+
+    # -------- PRODUCTS --------
+@app.route("/products", methods=["POST"])
+def create_product():
+    data = request.get_json()
+
+    if not data or "product_name" not in data or "price" not in data:
+        return {"error": "product_name and price required"}, 400
+
+    product = Product(
+        product_name=data["product_name"],
+        price=data["price"]
+    )
+
+    db.session.add(product)
+    db.session.commit()
+
+    return product_schema.dump(product), 201
+
 
 # ----------------------
 # CREATE TABLES
