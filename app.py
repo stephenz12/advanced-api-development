@@ -186,6 +186,12 @@ def create_product():
     return product_schema.dump(product), 201
 
 
+@app.route("/products", methods=["GET"])
+def get_products():
+    products = Product.query.all()
+    return products_schema.dump(products)
+
+
 # ----------------------
 # CREATE TABLES
 # ----------------------
