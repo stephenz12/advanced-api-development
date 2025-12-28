@@ -18,6 +18,8 @@ ma = Marshmallow(app)
 # MODELS
 # ----------------------
 class User(db.Model):
+    __tablename__ = "users"
+
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
@@ -25,39 +27,55 @@ class User(db.Model):
 
 order_product = db.Table(
     'order_product',
-    db.Column('order_id', db.Integer, db.ForeignKey('order.id'), primary_key=True),
-    db.Column('product_id', db.Integer, db.ForeignKey('product.id'), primary_key=True)
+    db.Column('order_id', db.Integer, db.ForeignKey('orders.id'), primary_key=True),
+    db.Column('product_id', db.Integer, db.ForeignKey('products.id'), primary_key=True)
 )
 
 
 class Order(db.Model):
+    __tablename__ = "orders"
+
     id = db.Column(db.Integer, primary_key=True)
     order_date = db.Column(db.DateTime, default=datetime.utcnow)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
 
-    user = db.relationship('User', backref=db.backref('orders', lazy=True))
     products = db.relationship(
-        'Product',
+        "Product",
         secondary=order_product,
-        backref=db.backref('orders', lazy=True)
+        back_populates="orders"
     )
 
 
 class Product(db.Model):
+    __tablename__ = "products"
+
     id = db.Column(db.Integer, primary_key=True)
     product_name = db.Column(db.String(100), nullable=False)
     price = db.Column(db.Float, nullable=False)
 
+    orders = db.relationship(
+        "Order",
+        secondary=order_product,
+        back_populates="products"
+    )
 
 # ----------------------
 # SCHEMAS
 # ----------------------
+
 class UserSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
         model = User
 
 
+class ProductSchema(ma.SQLAlchemyAutoSchema):
+    class Meta:
+        model = Product
+
+
 class OrderSchema(ma.SQLAlchemyAutoSchema):
+    products = ma.Nested(ProductSchema, many=True)
+
     class Meta:
         model = Order
         include_fk = True
@@ -66,15 +84,11 @@ class OrderSchema(ma.SQLAlchemyAutoSchema):
 user_schema = UserSchema()
 users_schema = UserSchema(many=True)
 
-order_schema = OrderSchema()
-orders_schema = OrderSchema(many=True)
-
-class ProductSchema(ma.SQLAlchemyAutoSchema):
-    class Meta:
-        model = Product
-
 product_schema = ProductSchema()
 products_schema = ProductSchema(many=True)
+
+order_schema = OrderSchema()
+orders_schema = OrderSchema(many=True)
 
 # ----------------------
 # ROUTES
@@ -135,6 +149,23 @@ def create_order():
 def get_orders_by_user(user_id):
     orders = Order.query.filter_by(user_id=user_id).all()
     return orders_schema.dump(orders)
+
+
+@app.route("/orders/<int:order_id>/add_product/<int:product_id>", methods=["PUT"])
+def add_product_to_order(order_id, product_id):
+    order = Order.query.get(order_id)
+    product = Product.query.get(product_id)
+
+    if not order or not product:
+        return {"error": "Order or Product not found"}, 404
+
+    if product in order.products:
+        return {"error": "Product already in order"}, 400
+
+    order.products.append(product)
+    db.session.commit()
+
+    return order_schema.dump(order), 200
 
     # -------- PRODUCTS --------
 @app.route("/products", methods=["POST"])
