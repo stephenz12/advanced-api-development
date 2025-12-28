@@ -125,6 +125,19 @@ def get_users():
     users = User.query.all()
     return users_schema.dump(users)
 
+
+@app.route("/users/<int:user_id>", methods=["DELETE"])
+def delete_user(user_id):
+    user = User.query.get(user_id)
+
+    if not user:
+        return {"error": "User not found"}, 404
+
+    db.session.delete(user)
+    db.session.commit()
+
+    return {"message": "User deleted successfully"}, 200
+
 # -------- ORDERS --------
 @app.route("/orders", methods=["POST"])
 def create_order():
@@ -190,6 +203,19 @@ def create_product():
 def get_products():
     products = Product.query.all()
     return products_schema.dump(products)
+
+
+@app.route("/products/<int:product_id>", methods=["DELETE"])
+def delete_product(product_id):
+    product = Product.query.get(product_id)
+
+    if not product:
+        return {"error": "Product not found"}, 404
+
+    db.session.delete(product)
+    db.session.commit()
+
+    return {"message": "Product deleted successfully"}, 200
 
 
 # ----------------------
