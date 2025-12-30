@@ -1,5 +1,5 @@
 from flask import request, jsonify
-from app.extensions import db
+from app.extensions import db, limiter, cache
 from app.models import Mechanic
 from app.mechanics import mechanics_bp
 from app.mechanics.schemas import mechanic_schema, mechanics_schema
@@ -20,6 +20,8 @@ def create_mechanic():
     return mechanic_schema.jsonify(mechanic), 201
 
 
+@cache.cached(timeout=60)
+@limiter.limit("5 per minute")
 @mechanics_bp.route("/", methods=["GET"])
 def get_mechanics():
     mechanics = Mechanic.query.all()

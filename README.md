@@ -1,13 +1,39 @@
-# Mechanic Shop API
+# E-Commerce API (Flask)
 
-Flask REST API for managing customers, mechanics, and service tickets.
+This project is a RESTful API built with Flask for managing customers in a mechanic shop system.  
+It includes secure authentication, protected routes, rate limiting, and caching.
 
-## Setup
+---
 
-1. Create virtual environment
-2. Install dependencies
-3. Run `python run.py`
+## Features
 
-## Testing
+- Customer registration with hashed passwords
+- Customer login with JWT authentication
+- Protected routes using Bearer tokens
+- Rate limiting with Flask-Limiter
+- Response caching with Flask-Caching
+- CRUD operations for customers
+- SQLite database
 
-All endpoints were tested using Postman.
+---
+
+## Technologies Used
+
+- Python
+- Flask
+- Flask-SQLAlchemy
+- Flask-Marshmallow
+- Flask-Bcrypt
+- Flask-JWT-Extended
+- Flask-Limiter
+- Flask-Caching
+- SQLite
+
+---
+
+## Setup Instructions
+
+```bash
+pip install -r requirements.txt
+python run.py
+```
