@@ -1,19 +1,14 @@
-from datetime import datetime, timedelta
-from jose import jwt
-from flask import current_app
+from flask_jwt_extended import jwt_required, create_access_token
+from functools import wraps
 
 
 def encode_token(customer_id):
-    payload = {
-        "sub": customer_id,
-        "iat": datetime.utcnow(),
-        "exp": datetime.utcnow() + timedelta(hours=1)
-    }
+    return create_access_token(identity=customer_id)
 
-    token = jwt.encode(
-        payload,
-        current_app.config["SECRET_KEY"],
-        algorithm="HS256"
-    )
 
-    return token
+def token_required(fn):
+    @wraps(fn)
+    @jwt_required()
+    def wrapper(*args, **kwargs):
+        return fn(*args, **kwargs)
+    return wrapper
