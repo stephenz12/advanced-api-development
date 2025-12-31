@@ -37,3 +37,19 @@ It includes secure authentication, protected routes, rate limiting, and caching.
 pip install -r requirements.txt
 python run.py
 ```
+
+## API Documentation
+
+Swagger UI is available at:
+
+http://127.0.0.1:5000/swagger/
+
+Run the application with:
+
+python run.py
+
+## Testing
+
+Run all unit tests with:
+
+python -m unittest discover tests
