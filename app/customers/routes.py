@@ -1,4 +1,9 @@
 from flask import request, jsonify
+from flask_jwt_extended import (
+    jwt_required,
+    create_access_token,
+    get_jwt_identity
+)
 from app.extensions import db, bcrypt
 from app.models import Customer
 from app.customers import customers_bp
@@ -7,39 +12,12 @@ from app.customers.schemas import (
     customers_schema,
     login_schema
 )
-from app.utils.auth import encode_token, token_required
-
 
 # =========================
 # REGISTER CUSTOMER
 # =========================
 @customers_bp.route("/", methods=["POST"])
 def create_customer():
-    """
-    Register customer
-    ---
-    tags:
-      - Customers
-    summary: Register a new customer
-    parameters:
-      - in: body
-        name: body
-        schema:
-          properties:
-            name:
-              type: string
-            email:
-              type: string
-            password:
-              type: string
-            phone:
-              type: string
-    responses:
-      201:
-        description: Customer created
-      409:
-        description: Email already exists
-    """
     data = request.get_json()
 
     if Customer.query.filter_by(email=data["email"]).first():
@@ -67,27 +45,6 @@ def create_customer():
 # =========================
 @customers_bp.route("/login", methods=["POST"])
 def login_customer():
-    """
-    Login customer
-    ---
-    tags:
-      - Customers
-    summary: Customer login
-    parameters:
-      - in: body
-        name: body
-        schema:
-          properties:
-            email:
-              type: string
-            password:
-              type: string
-    responses:
-      200:
-        description: Login successful
-      401:
-        description: Invalid credentials
-    """
     data = request.get_json()
 
     errors = login_schema.validate(data)
@@ -101,10 +58,11 @@ def login_customer():
     if not bcrypt.check_password_hash(customer.password, data["password"]):
         return jsonify({"error": "Invalid email or password"}), 401
 
-    token = encode_token(customer.id)
+    # ✅ FIX: identity MUST be a string
+    token = create_access_token(identity=str(customer.id))
 
     return jsonify({
-        "token": token,
+        "access_token": token,
         "customer_id": customer.id
     }), 200
 
@@ -113,20 +71,8 @@ def login_customer():
 # GET ALL CUSTOMERS (PROTECTED)
 # =========================
 @customers_bp.route("/", methods=["GET"])
-@token_required
-def get_customers(customer_id):
-    """
-    Get all customers
-    ---
-    tags:
-      - Customers
-    summary: Retrieve all customers
-    security:
-      - Bearer: []
-    responses:
-      200:
-        description: List of customers
-    """
+@jwt_required()
+def get_customers():
     customers = Customer.query.all()
     return customers_schema.jsonify(customers), 200
 
@@ -135,36 +81,11 @@ def get_customers(customer_id):
 # UPDATE CUSTOMER (OWNER ONLY)
 # =========================
 @customers_bp.route("/<int:id>", methods=["PUT"])
-@token_required
-def update_customer(customer_id, id):
-    """
-    Update customer
-    ---
-    tags:
-      - Customers
-    summary: Update customer info
-    security:
-      - Bearer: []
-    parameters:
-      - in: path
-        name: id
-        type: integer
-      - in: body
-        name: body
-        schema:
-          properties:
-            name:
-              type: string
-            email:
-              type: string
-            phone:
-              type: string
-    responses:
-      200:
-        description: Customer updated
-      403:
-        description: Unauthorized
-    """
+@jwt_required()
+def update_customer(id):
+    # ✅ FIX: cast identity back to int
+    customer_id = int(get_jwt_identity())
+
     if customer_id != id:
         return jsonify({"error": "Unauthorized"}), 403
 
@@ -183,26 +104,11 @@ def update_customer(customer_id, id):
 # DELETE CUSTOMER (OWNER ONLY)
 # =========================
 @customers_bp.route("/<int:id>", methods=["DELETE"])
-@token_required
-def delete_customer(customer_id, id):
-    """
-    Delete customer
-    ---
-    tags:
-      - Customers
-    summary: Delete customer
-    security:
-      - Bearer: []
-    parameters:
-      - in: path
-        name: id
-        type: integer
-    responses:
-      200:
-        description: Customer deleted
-      403:
-        description: Unauthorized
-    """
+@jwt_required()
+def delete_customer(id):
+    # ✅ FIX: cast identity back to int
+    customer_id = int(get_jwt_identity())
+
     if customer_id != id:
         return jsonify({"error": "Unauthorized"}), 403
 

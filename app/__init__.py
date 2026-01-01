@@ -1,21 +1,18 @@
 from flask import Flask
 from app.extensions import db, ma, limiter, cache, bcrypt, jwt
 
-
 def create_app(config_class=None):
     app = Flask(__name__)
 
-    # 🔐 DEFAULT CONFIG (SAFE FOR LOCAL + RENDER)
+    # Default config
     app.config["SECRET_KEY"] = "dev-secret-key"
     app.config["JWT_SECRET_KEY"] = "jwt-dev-secret"
     app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///app.db"
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
-    # Optional override (e.g. ProductionConfig on Render)
     if config_class:
         app.config.from_object(config_class)
 
-    # 🔌 INIT EXTENSIONS
     db.init_app(app)
     ma.init_app(app)
     bcrypt.init_app(app)
@@ -23,7 +20,14 @@ def create_app(config_class=None):
     limiter.init_app(app)
     cache.init_app(app)
 
-    # 📦 REGISTER BLUEPRINTS
+    # ✅ IMPORT MODELS (CORRECT LOCATION)
+    from app.models import Customer, Mechanic, ServiceTicket
+
+    # ✅ CREATE TABLES
+    with app.app_context():
+        db.create_all()
+
+    # ✅ REGISTER BLUEPRINTS
     from app.auth import auth_bp
     from app.customers import customers_bp
     from app.mechanics import mechanics_bp
