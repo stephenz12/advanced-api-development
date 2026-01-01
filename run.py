@@ -29,6 +29,9 @@ def swagger_json():
         "version": "1.0"
     }
 
+    swag["host"] = "advanced-api-development.onrender.com"
+    swag["schemes"] = ["https"]
+
     swag["securityDefinitions"] = {
         "Bearer": {
             "type": "apiKey",
@@ -39,9 +42,3 @@ def swagger_json():
     }
 
     return jsonify(swag)
-
-# -------------------------
-# Run Server
-# -------------------------
-if __name__ == "__main__":
-    app.run(debug=True)
