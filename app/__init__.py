@@ -42,42 +42,4 @@ def create_app(config_class=None):
     app.register_blueprint(service_tickets_bp, url_prefix="/service-tickets")
 
             
-    # Swagger Configuration
-    # -------------------------
-    SWAGGER_URL = "/swagger"
-    API_URL = "/swagger.json"
-
-    swaggerui_bp = get_swaggerui_blueprint(
-        SWAGGER_URL,
-        API_URL,
-        config={"app_name": "E-Commerce API"}
-    )
-
-    app.register_blueprint(swaggerui_bp)
-
-
-    @app.route("/swagger.json")
-    def swagger_json():
-        swag = swagger(app)
-
-        swag["info"] = {
-            "title": "E-Commerce API",
-            "version": "1.0"
-        }
-
-        swag["host"] = "advanced-api-development.onrender.com"
-        swag["schemes"] = ["https"]
-
-        swag["securityDefinitions"] = {
-            "Bearer": {
-                "type": "apiKey",
-                "name": "Authorization",
-                "in": "header",
-                "description": "JWT Authorization header using the Bearer scheme"
-            }
-        }
-
-        return jsonify(swag)
-
-
     return app
