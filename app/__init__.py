@@ -1,6 +1,4 @@
 from flask import Flask, jsonify
-from flask_swagger import swagger
-from flask_swagger_ui import get_swaggerui_blueprint
 
 from app.extensions import db, ma, limiter, cache, bcrypt, jwt
 
