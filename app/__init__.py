@@ -53,7 +53,8 @@ def create_app(config_class=None):
         config={"app_name": "E-Commerce API"}
     )
 
-    app.register_blueprint(swaggerui_bp, url_prefix=SWAGGER_URL)
+    app.register_blueprint(swaggerui_bp)
+
 
     @app.route("/swagger.json")
     def swagger_json():
